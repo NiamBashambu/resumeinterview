@@ -1,0 +1,171 @@
+[
+  {
+    "skill": "python",
+    "displayName": "Python",
+    "levels": {
+      "beginner": [
+        "Explain the difference between a list and a tuple in Python.",
+        "What is a Python dictionary and how would you use it?",
+        "How do you handle exceptions in Python?"
+      ],
+      "intermediate": [
+        "How would you use list comprehensions to transform a dataset in Python?",
+        "Explain the difference between __init__ and __new__ in Python.",
+        "How would you implement a decorator in Python?"
+      ],
+      "advanced": [
+        "Describe how you would optimize a slow Python data pipeline that processes large files.",
+        "Explain how generators work in Python and when you would use them over lists.",
+        "How would you implement a context manager in Python and what are its use cases?"
+      ]
+    }
+  },
+  {
+    "skill": "git",
+    "displayName": "Git",
+    "levels": {
+      "beginner": [
+        "What is the difference between git clone and git fork?",
+        "Explain what git commit does.",
+        "How do you check the status of your git repository?"
+      ],
+      "intermediate": [
+        "What is the difference between git merge and git rebase, and when would you use each?",
+        "Explain how to resolve a merge conflict in Git.",
+        "What is the difference between git pull and git fetch?"
+      ],
+      "advanced": [
+        "How would you rewrite git history using interactive rebase?",
+        "Explain the Git workflow for maintaining a clean commit history in a team environment.",
+        "How would you recover a deleted branch in Git?"
+      ]
+    }
+  },
+  {
+    "skill": "html",
+    "displayName": "HTML",
+    "levels": {
+      "beginner": [
+        "What is the purpose of semantic HTML elements?",
+        "Explain the difference between div and span elements.",
+        "How do you create a hyperlink in HTML?"
+      ],
+      "intermediate": [
+        "How would you structure a semantic HTML page for a simple portfolio site?",
+        "Explain the difference between inline and block elements in HTML.",
+        "How would you implement a responsive navigation menu using HTML and CSS?"
+      ],
+      "advanced": [
+        "How would you optimize HTML for accessibility and SEO?",
+        "Explain how HTML5 Web Components work and when you would use them.",
+        "How would you implement a complex form with validation using only HTML5?"
+      ]
+    }
+  },
+  {
+    "skill": "css",
+    "displayName": "CSS",
+    "levels": {
+      "beginner": [
+        "What is the difference between margin and padding in CSS?",
+        "Explain the CSS box model.",
+        "How do you center an element horizontally in CSS?"
+      ],
+      "intermediate": [
+        "Explain the difference between flexbox and grid layout in CSS.",
+        "How would you create a responsive design using CSS media queries?",
+        "What is CSS specificity and how does it work?"
+      ],
+      "advanced": [
+        "How would you implement a complex animation using CSS keyframes?",
+        "Explain CSS custom properties (variables) and their use cases.",
+        "How would you optimize CSS for performance in a large-scale application?"
+      ]
+    }
+  },
+  {
+    "skill": "sql",
+    "displayName": "SQL",
+    "levels": {
+      "beginner": [
+        "What is the difference between WHERE and HAVING clauses in SQL?",
+        "Explain the difference between INNER JOIN and LEFT JOIN.",
+        "How do you filter duplicate rows in a SQL query?"
+      ],
+      "intermediate": [
+        "How would you optimize a slow SQL query that joins multiple tables?",
+        "Explain the difference between a subquery and a JOIN.",
+        "How would you write a query to find the second highest salary in a table?"
+      ],
+      "advanced": [
+        "How would you design a database schema to handle time-series data efficiently?",
+        "Explain database indexing strategies and when to use different types of indexes.",
+        "How would you implement a recursive query using CTEs (Common Table Expressions)?"
+      ]
+    }
+  },
+  {
+    "skill": "javascript",
+    "displayName": "JavaScript",
+    "levels": {
+      "beginner": [
+        "What is the difference between let, const, and var in JavaScript?",
+        "Explain what a closure is in JavaScript.",
+        "How do you handle asynchronous operations in JavaScript?"
+      ],
+      "intermediate": [
+        "Explain the difference between Promise.all() and Promise.allSettled().",
+        "How would you implement debouncing or throttling in JavaScript?",
+        "What is the event loop in JavaScript and how does it work?"
+      ],
+      "advanced": [
+        "How would you optimize a JavaScript application for performance?",
+        "Explain how prototypal inheritance works in JavaScript.",
+        "How would you implement a custom state management solution in JavaScript?"
+      ]
+    }
+  },
+  {
+    "skill": "react",
+    "displayName": "React",
+    "levels": {
+      "beginner": [
+        "What is the difference between functional and class components in React?",
+        "Explain what props are in React and how to use them.",
+        "What is state in React and how do you update it?"
+      ],
+      "intermediate": [
+        "Explain the difference between useEffect and useMemo hooks.",
+        "How would you optimize a React component that re-renders too frequently?",
+        "What is the purpose of React keys and when should you use them?"
+      ],
+      "advanced": [
+        "How would you implement a custom React hook for data fetching?",
+        "Explain React's reconciliation algorithm and how it works.",
+        "How would you implement code splitting and lazy loading in a React application?"
+      ]
+    }
+  },
+  {
+    "skill": "nodejs",
+    "displayName": "Node.js",
+    "levels": {
+      "beginner": [
+        "What is Node.js and how does it differ from browser JavaScript?",
+        "Explain what npm is and how to use it.",
+        "How do you handle errors in Node.js applications?"
+      ],
+      "intermediate": [
+        "How would you implement middleware in an Express.js application?",
+        "Explain the difference between require() and import in Node.js.",
+        "How would you handle file uploads in a Node.js application?"
+      ],
+      "advanced": [
+        "How would you optimize a Node.js application for high concurrency?",
+        "Explain how the Node.js event loop handles I/O operations.",
+        "How would you implement a microservices architecture using Node.js?"
+      ]
+    }
+  }
+]
+

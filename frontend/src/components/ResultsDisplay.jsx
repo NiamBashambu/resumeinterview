@@ -1,0 +1,66 @@
+import './ResultsDisplay.css'
+
+function ResultsDisplay({ results }) {
+  if (!results || (!results.skills?.length && !results.questions?.length)) {
+    return (
+      <div className="results-container">
+        <div className="no-results">
+          <p>No skills detected. Please upload a resume with technical skills listed.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="results-container">
+      <div className="skills-section">
+        <h2>Detected Skills</h2>
+        {results.skills && results.skills.length > 0 ? (
+          <div className="skills-list">
+            {results.skills.map((skill, index) => (
+              <div key={index} className={`skill-badge skill-${skill.level}`}>
+                <span className="skill-name">{skill.name}</span>
+                <span className="skill-level">{skill.level}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="no-skills">No skills detected</p>
+        )}
+      </div>
+
+      <div className="questions-section">
+        <h2>Interview Questions</h2>
+        {results.questions && results.questions.length > 0 ? (
+          <div className="questions-list">
+            {results.questions.map((question, index) => (
+              <div key={index} className="question-card">
+                <div className="question-header">
+                  <span className="question-number">{index + 1}</span>
+                  <span className="question-skill">{question.skill}</span>
+                  <span className={`question-level question-level-${question.level}`}>
+                    {question.level}
+                  </span>
+                </div>
+                <p className="question-text">{question.question}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="no-questions">No questions generated</p>
+        )}
+      </div>
+
+      {results.qa_summary && (
+        <div className="qa-summary">
+          <h3>Quality Assurance</h3>
+          <p>Total Questions: {results.qa_summary.total}</p>
+          <p>Passed: {results.qa_summary.passed}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default ResultsDisplay
+
