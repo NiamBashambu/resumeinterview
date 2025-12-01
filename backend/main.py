@@ -55,6 +55,13 @@ class AnalyzeResponse(BaseModel):
     qa_summary: Optional[dict] = None
 
 
+class RefreshQuestionRequest(BaseModel):
+    skill: str
+    level: str
+    exclude_question: Optional[str] = None
+    resume_text: Optional[str] = None
+
+
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint"""
@@ -144,6 +151,36 @@ async def judge_question(
         "passes": passes,
         "violations": violations
     }
+
+
+@app.post("/api/refresh_question", response_model=InterviewQuestion)
+async def refresh_question(request: RefreshQuestionRequest):
+    """
+    Generate a fresh question for a specific skill and level.
+    
+    - **skill**: The skill key (e.g., "python")
+    - **level**: The proficiency level (beginner/intermediate/advanced)
+    - **exclude_question**: Optional current question to exclude from results
+    - **resume_text**: Optional resume text snippet for AI generation
+    """
+    try:
+        fresh_question = analyzer.get_fresh_question(
+            skill_key=request.skill,
+            level=request.level,
+            exclude_question=request.exclude_question,
+            resume_text=request.resume_text
+        )
+        
+        if not fresh_question:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No questions available for skill '{request.skill}' at level '{request.level}'"
+            )
+        
+        return InterviewQuestion(**fresh_question)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error refreshing question: {str(e)}")
 
 
 if __name__ == "__main__":

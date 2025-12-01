@@ -34,6 +34,44 @@ function App() {
     }
   }
 
+  const handleRefreshQuestion = async (questionIndex, skill, level, currentQuestion) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/refresh_question', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          skill,
+          level,
+          exclude_question: currentQuestion,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to refresh question')
+      }
+
+      const newQuestion = await response.json()
+      
+      // Update the specific question in results
+      setResults((prevResults) => {
+        if (!prevResults || !prevResults.questions) return prevResults
+        
+        const updatedQuestions = [...prevResults.questions]
+        updatedQuestions[questionIndex] = newQuestion
+        
+        return {
+          ...prevResults,
+          questions: updatedQuestions,
+        }
+      })
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -58,7 +96,10 @@ function App() {
         {results && (
           <div className="results-section">
             <SkillVisualization skills={results.skills} />
-            <ResultsDisplay results={results} />
+            <ResultsDisplay 
+              results={results} 
+              onRefreshQuestion={handleRefreshQuestion}
+            />
           </div>
         )}
       </main>

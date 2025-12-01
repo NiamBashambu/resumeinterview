@@ -4,6 +4,8 @@ import re
 from typing import List, Dict, Optional
 from io import BytesIO
 import ollama
+from collections import defaultdict
+import random
 
 
 class ResumeAnalyzer:
@@ -14,6 +16,10 @@ class ResumeAnalyzer:
         
         self.ollama_model = ollama_model
         self.use_ollama = self._check_ollama_available()  # Check if Ollama is available
+        
+        # Track question usage for rotation
+        # Format: {(skill, level): [list of used question indices]}
+        self.question_usage = defaultdict(list)
         
         # Build skill vocabulary mapping for fallback and validation
         self.skill_vocab = {}
@@ -346,59 +352,6 @@ Respond with ONLY one word: "beginner", "intermediate", or "advanced"."""
         # Default to intermediate if no clear signal
         return "intermediate"
     
-    def generate_questions(self, detected_skills: List[Dict]) -> List[Dict]:
-        """Generate interview questions from detected skills."""
-        questions = []
-        question_bank_dict = {e["skill"]: e for e in self.question_bank}
-        
-        for skill in detected_skills:
-            skill_key = skill["key"]
-            level = skill["level"]
-            
-            if skill_key not in question_bank_dict:
-                continue
-            
-            skill_entry = question_bank_dict[skill_key]
-            level_questions = skill_entry["levels"].get(level, [])
-            
-            if level_questions:
-                # Take 1-2 questions per skill, prioritizing the first
-                num_questions = min(2, len(level_questions))
-                for i in range(num_questions):
-                    if len(questions) >= 5:  # Max 5 questions
-                        break
-                    questions.append({
-                        "skill": skill_key,
-                        "level": level,
-                        "question": level_questions[i]
-                    })
-            
-            if len(questions) >= 5:
-                break
-        
-        # If we have fewer than 3 questions, backfill with intermediate questions
-        if len(questions) < 3:
-            for skill in detected_skills:
-                if len(questions) >= 3:
-                    break
-                skill_key = skill["key"]
-                if skill_key not in question_bank_dict:
-                    continue
-                
-                skill_entry = question_bank_dict[skill_key]
-                intermediate_questions = skill_entry["levels"].get("intermediate", [])
-                
-                # Check if we already have a question for this skill
-                if not any(q["skill"] == skill_key for q in questions):
-                    if intermediate_questions:
-                        questions.append({
-                            "skill": skill_key,
-                            "level": "intermediate",
-                            "question": intermediate_questions[0]
-                        })
-        
-        return questions[:5]  # Ensure max 5 questions
-    
     def generate_questions_with_ollama(self, detected_skills: List[Dict], resume_text: str) -> List[Dict]:
         """Use Ollama to dynamically generate interview questions based on detected skills and levels."""
         try:
@@ -540,6 +493,64 @@ Return ONLY valid JSON, no additional text."""
             print(f"Ollama question generation failed: {str(e)}, using question bank")
             return None
     
+    def _get_next_question_from_bank(self, skill_key: str, level: str, exclude_question: Optional[str] = None) -> Optional[str]:
+        """Get the next question from the question bank using rotation logic.
+        
+        Tracks question usage to avoid repeats until after ~10 uses.
+        """
+        question_bank_dict = {e["skill"]: e for e in self.question_bank}
+        
+        if skill_key not in question_bank_dict:
+            return None
+        
+        skill_entry = question_bank_dict[skill_key]
+        level_questions = skill_entry["levels"].get(level, [])
+        
+        if not level_questions:
+            return None
+        
+        # Get usage tracking key
+        usage_key = (skill_key, level)
+        used_indices = self.question_usage[usage_key]
+        
+        MAX_REPEATS = 10  # Allow repeats after 10 uses
+        
+        # Filter out excluded question if provided
+        available_indices = []
+        for idx, question in enumerate(level_questions):
+            # Skip if this is the excluded question
+            if exclude_question and question == exclude_question:
+                continue
+            
+            # Count how many times this question has been used in recent history
+            recent_uses = used_indices[-MAX_REPEATS:].count(idx)
+            
+            # Include questions that haven't been used recently
+            if recent_uses < MAX_REPEATS:
+                available_indices.append((idx, question))
+        
+        # If all questions have been used recently, reset and allow all (except excluded)
+        if not available_indices:
+            available_indices = [
+                (idx, q) for idx, q in enumerate(level_questions)
+                if not exclude_question or q != exclude_question
+            ]
+            # Clear tracking after MAX_REPEATS to start fresh cycle
+            if len(used_indices) >= MAX_REPEATS:
+                self.question_usage[usage_key] = []
+        
+        # Select a random question from available ones to add variation
+        if available_indices:
+            selected_idx, selected_question = random.choice(available_indices)
+            # Track usage
+            self.question_usage[usage_key].append(selected_idx)
+            return selected_question
+        
+        # Fallback: return first question if no exclusion, or second if first is excluded
+        if exclude_question and level_questions[0] == exclude_question and len(level_questions) > 1:
+            return level_questions[1]
+        return level_questions[0]
+    
     def generate_questions(self, detected_skills: List[Dict], resume_text: Optional[str] = None) -> List[Dict]:
         """Generate interview questions from detected skills using AI, with fallback to question bank."""
         ai_questions = []
@@ -572,14 +583,13 @@ Return ONLY valid JSON, no additional text."""
             if skill_key not in question_bank_dict:
                 continue
             
-            skill_entry = question_bank_dict[skill_key]
-            level_questions = skill_entry["levels"].get(level, [])
-            
-            if level_questions:
+            # Use rotation logic to get next question
+            question_text = self._get_next_question_from_bank(skill_key, level)
+            if question_text:
                 questions.append({
                     "skill": skill_key,
                     "level": level,
-                    "question": level_questions[0]
+                    "question": question_text
                 })
                 skills_with_questions.add(skill_key)
         
@@ -596,18 +606,49 @@ Return ONLY valid JSON, no additional text."""
                 if skill_key in skills_with_questions:
                     continue
                 
-                skill_entry = question_bank_dict[skill_key]
-                intermediate_questions = skill_entry["levels"].get("intermediate", [])
-                
-                if intermediate_questions:
+                # Use rotation logic to get next intermediate question
+                question_text = self._get_next_question_from_bank(skill_key, "intermediate")
+                if question_text:
                     questions.append({
                         "skill": skill_key,
                         "level": "intermediate",
-                        "question": intermediate_questions[0]
+                        "question": question_text
                     })
                     skills_with_questions.add(skill_key)
         
         return questions[:5]  # Ensure max 5 questions
+    
+    def get_fresh_question(self, skill_key: str, level: str, exclude_question: Optional[str] = None, resume_text: Optional[str] = None) -> Optional[Dict]:
+        """Get a fresh question for a specific skill and level, optionally excluding a current question."""
+        # Try AI generation first if resume text is available
+        if self.use_ollama and resume_text:
+            try:
+                # Create a single skill dict for AI generation
+                skill_dict = {
+                    "key": skill_key,
+                    "name": next((e["displayName"] for e in self.question_bank if e["skill"] == skill_key), skill_key),
+                    "level": level,
+                    "context": ""
+                }
+                ai_questions = self.generate_questions_with_ollama([skill_dict], resume_text)
+                if ai_questions:
+                    # Filter out excluded question if provided
+                    for q in ai_questions:
+                        if q.get("skill", "").lower() == skill_key.lower() and q.get("question") != exclude_question:
+                            return q
+            except Exception as e:
+                print(f"AI question generation failed for refresh: {str(e)}, using question bank")
+        
+        # Fallback to question bank with rotation
+        question_text = self._get_next_question_from_bank(skill_key, level, exclude_question)
+        if question_text:
+            return {
+                "skill": skill_key,
+                "level": level,
+                "question": question_text
+            }
+        
+        return None
     
     def analyze(self, pdf_content: bytes, job_role: Optional[str] = None) -> Dict:
         """Main analysis function."""

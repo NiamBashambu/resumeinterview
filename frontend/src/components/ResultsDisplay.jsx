@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import './ResultsDisplay.css'
 
-function ResultsDisplay({ results }) {
+function ResultsDisplay({ results, onRefreshQuestion }) {
+  const [refreshingIndex, setRefreshingIndex] = useState(null)
+
   if (!results || (!results.skills?.length && !results.questions?.length)) {
     return (
       <div className="results-container">
@@ -9,6 +12,15 @@ function ResultsDisplay({ results }) {
         </div>
       </div>
     )
+  }
+
+  const handleRefresh = async (index, question) => {
+    setRefreshingIndex(index)
+    try {
+      await onRefreshQuestion(index, question.skill, question.level, question.question)
+    } finally {
+      setRefreshingIndex(null)
+    }
   }
 
   return (
@@ -41,6 +53,21 @@ function ResultsDisplay({ results }) {
                   <span className={`question-level question-level-${question.level}`}>
                     {question.level}
                   </span>
+                  {onRefreshQuestion && (
+                    <button
+                      className="refresh-button"
+                      onClick={() => handleRefresh(index, question)}
+                      disabled={refreshingIndex === index}
+                      title="Refresh question"
+                      aria-label="Refresh question"
+                    >
+                      {refreshingIndex === index ? (
+                        <span className="refresh-spinner">⟳</span>
+                      ) : (
+                        <span className="refresh-icon">⟳</span>
+                      )}
+                    </button>
+                  )}
                 </div>
                 <p className="question-text">{question.question}</p>
               </div>
