@@ -17,9 +17,10 @@ function SkillSphere({ skills }) {
       const y = (Math.random() - 0.5) * 2
 
       const levelColors = {
-        beginner: '#1976d2',
-        intermediate: '#f57c00',
-        advanced: '#2e7d32'
+        // High-contrast colors against the purple gradient background
+        beginner: '#4FC3F7',      // light blue
+        intermediate: '#FFD54F',  // warm yellow
+        advanced: '#FF7043'       // vivid orange
       }
 
       objects.push({
@@ -39,12 +40,12 @@ function SkillSphere({ skills }) {
         <group key={index} position={obj.position}>
           <mesh>
             <sphereGeometry args={[0.4, 16, 16]} />
-            <meshStandardMaterial color={obj.color} emissive={obj.color} emissiveIntensity={0.3} />
+            <meshStandardMaterial color={obj.color} emissive={obj.color} emissiveIntensity={0.5} />
           </mesh>
           <Text
             position={[0, 0.8, 0]}
             fontSize={0.15}
-            color={obj.color}
+            color="#ffffff"
             anchorX="center"
             anchorY="middle"
           >

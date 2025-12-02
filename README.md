@@ -81,6 +81,73 @@ resumeinterview/
 
    The frontend will be available at `http://localhost:5173`
 
+## Ollama (Local LLM) Integration
+
+This project can optionally use [Ollama](https://ollama.com) to:
+- **Enhance skill detection** (AI-based parsing of resume text)
+- **Infer skill levels** more accurately
+- **Generate personalized interview questions** beyond the static question bank
+
+If Ollama is not available, the app automatically falls back to manual detection and the local JSON question bank. To enable full AI features, follow these steps on macOS:
+
+### 1. Install and start Ollama
+
+1. Download and install Ollama for macOS from: `https://ollama.com/download`  
+2. Open the Ollama app once; it will start a local server in the background (default: `http://localhost:11434`).
+
+You can also start the server from a terminal:
+
+```bash
+ollama serve
+```
+
+Leave this terminal window open while you use the app.
+
+### 2. Verify that Ollama is running
+
+Open a new terminal (separate from the backend server) and run:
+
+```bash
+ollama --version
+```
+
+If the command is not found, close and reopen your terminal after installing Ollama, or ensure your shell is using the correct PATH.
+
+Then check the HTTP API:
+
+```bash
+curl http://localhost:11434/api/tags
+```
+
+- If you see JSON output (a list of models or an empty list), **Ollama is running**.
+- If you see `Connection refused`, the server is not running – make sure the Ollama app is open or run `ollama serve`.
+
+### 3. Pull the model used by this project
+
+The backend is configured to use the `llama3.2` model (see `ResumeAnalyzer(ollama_model="llama3.2")` in `backend/resume_analyzer.py`).  
+Pull this model once:
+
+```bash
+ollama pull llama3.2
+```
+
+After this finishes, `ollama.list()` will see `llama3.2` and the backend will enable AI-based features.
+
+### 4. Restart the backend
+
+If the backend was already running when you set up Ollama, restart it from the project root:
+
+```bash
+cd "resumeinterview"
+python -m uvicorn backend.main:app --reload --port 8000
+```
+
+When Ollama is available, you should **not** see messages like:
+
+`Ollama not available: [Errno 61] Connection refused. Falling back to manual detection.`
+
+and the app will use Ollama for skill detection and question generation.
+
 ## API Endpoints
 
 ### GET /api/health

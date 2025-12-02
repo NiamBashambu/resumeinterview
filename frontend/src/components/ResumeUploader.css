@@ -61,7 +61,7 @@
   justify-content: center;
   gap: 1rem;
   padding: 1rem;
-  background: #e8f5e9;
+  background: #E3F7FE; /* align with beginner highlight style */
   border-radius: 8px;
 }
 
@@ -71,7 +71,7 @@
 
 .file-name {
   font-weight: 500;
-  color: #2e7d32;
+  color: #0277BD;
   flex: 1;
   text-align: left;
 }

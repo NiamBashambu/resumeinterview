@@ -54,14 +54,14 @@
 }
 
 .legend-color.beginner {
-  background: #1976d2;
+  background: #4FC3F7; /* matches beginner sphere color */
 }
 
 .legend-color.intermediate {
-  background: #f57c00;
+  background: #FFD54F; /* matches intermediate sphere color */
 }
 
 .legend-color.advanced {
-  background: #2e7d32;
+  background: #FF7043; /* matches advanced sphere color */
 }
 

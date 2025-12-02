@@ -34,18 +34,18 @@
 }
 
 .skill-beginner {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: #E3F7FE; /* light variant of #4FC3F7 */
+  color: #0277BD;      /* darker blue for text */
 }
 
 .skill-intermediate {
-  background: #fff3e0;
-  color: #f57c00;
+  background: #FFF8E1; /* light variant of #FFD54F */
+  color: #F9A825;      /* darker yellow/gold for text */
 }
 
 .skill-advanced {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: #FFE3D5; /* light variant of #FF7043 */
+  color: #D84315;      /* darker orange for text */
 }
 
 .skill-name {
@@ -120,18 +120,18 @@
 }
 
 .question-level-beginner {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: #E3F7FE;
+  color: #0277BD;
 }
 
 .question-level-intermediate {
-  background: #fff3e0;
-  color: #f57c00;
+  background: #FFF8E1;
+  color: #F9A825;
 }
 
 .question-level-advanced {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: #FFE3D5;
+  color: #D84315;
 }
 
 .question-text {
