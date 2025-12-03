@@ -3,6 +3,7 @@ import './ResultsDisplay.css'
 
 function ResultsDisplay({ results, onRefreshQuestion }) {
   const [refreshingIndex, setRefreshingIndex] = useState(null)
+  const [showSolutions, setShowSolutions] = useState({})
 
   if (!results || (!results.skills?.length && !results.questions?.length)) {
     return (
@@ -70,6 +71,44 @@ function ResultsDisplay({ results, onRefreshQuestion }) {
                   )}
                 </div>
                 <p className="question-text">{question.question}</p>
+                {question.solution && (
+                  <div className="solution-section">
+                    <button
+                      className="solution-toggle"
+                      onClick={() => setShowSolutions(prev => ({
+                        ...prev,
+                        [index]: !prev[index]
+                      }))}
+                      aria-expanded={showSolutions[index] || false}
+                    >
+                      {showSolutions[index] ? (
+                        <>
+                          <span className="solution-icon">▼</span>
+                          <span>Hide Solution</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="solution-icon">▶</span>
+                          <span>Show Solution</span>
+                        </>
+                      )}
+                    </button>
+                    {showSolutions[index] && (
+                      <div className="solution-content">
+                        <h4 className="solution-title">Sample Solution:</h4>
+                        <div className="solution-text">
+                          {question.solution.split('\n').map((line, idx) => 
+                            line.trim() ? (
+                              <p key={idx}>{line.trim()}</p>
+                            ) : (
+                              <br key={idx} />
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

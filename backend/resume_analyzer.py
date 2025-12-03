@@ -352,6 +352,173 @@ Respond with ONLY one word: "beginner", "intermediate", or "advanced"."""
         # Default to intermediate if no clear signal
         return "intermediate"
     
+    def _parse_json_from_response(self, response_text: str) -> Optional[List[Dict]]:
+        """Parse JSON from Ollama response with multiple fallback strategies."""
+        if not response_text or not response_text.strip():
+            return None
+        
+        # Strategy 1: Try direct parsing if response looks like pure JSON
+        try:
+            cleaned = response_text.strip()
+            # Remove markdown code blocks if present
+            cleaned = re.sub(r'```json\s*', '', cleaned)
+            cleaned = re.sub(r'```\s*', '', cleaned)
+            cleaned = cleaned.strip()
+            
+            # Try parsing the entire cleaned response
+            parsed = json.loads(cleaned)
+            if isinstance(parsed, list):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+        
+        # Strategy 2: Extract JSON array with greedy match
+        try:
+            # Find JSON array - use greedy match to get complete array
+            array_match = re.search(r'\[[\s\S]*\]', response_text, re.DOTALL)
+            if array_match:
+                json_str = array_match.group(0)
+                # Remove markdown if present
+                json_str = re.sub(r'```json\s*', '', json_str)
+                json_str = re.sub(r'```\s*', '', json_str)
+                json_str = json_str.strip()
+                
+                # Fix common JSON issues
+                json_str = re.sub(r',\s*}', '}', json_str)  # Remove trailing commas before }
+                json_str = re.sub(r',\s*]', ']', json_str)  # Remove trailing commas before ]
+                
+                parsed = json.loads(json_str)
+                if isinstance(parsed, list) and len(parsed) > 0:
+                    return parsed
+        except json.JSONDecodeError:
+            pass
+        
+        # Strategy 3: Try to extract and fix individual question objects
+        try:
+            # Find all question-like objects even if array is malformed
+            # Pattern: { followed by skill, level, question fields
+            object_pattern = r'\{[^{}]*"skill"\s*:\s*"[^"]+"[^{}]*"level"\s*:\s*"[^"]+"[^{}]*"question"\s*:\s*"[^"]*"[^{}]*\}'
+            matches = re.findall(object_pattern, response_text, re.DOTALL | re.IGNORECASE)
+            
+            if matches:
+                parsed_objects = []
+                for match in matches:
+                    try:
+                        # Clean up the match
+                        cleaned_obj = match.strip()
+                        # Fix common issues
+                        cleaned_obj = re.sub(r"'(\w+)':", r'"\1":', cleaned_obj)  # Fix single quotes
+                        cleaned_obj = re.sub(r',\s*}', '}', cleaned_obj)  # Remove trailing commas
+                        
+                        obj = json.loads(cleaned_obj)
+                        if isinstance(obj, dict) and 'skill' in obj and 'level' in obj and 'question' in obj:
+                            parsed_objects.append(obj)
+                    except json.JSONDecodeError:
+                        continue
+                
+                if parsed_objects:
+                    return parsed_objects
+        except Exception:
+            pass
+        
+        # Strategy 4: Try to manually extract from incomplete JSON
+        try:
+            # Find all skill/level/question triplets even with broken JSON
+            questions = []
+            # Look for pattern: "skill": "value", "level": "value", "question": "value"
+            skill_matches = list(re.finditer(r'"skill"\s*:\s*"([^"]+)"', response_text, re.IGNORECASE))
+            
+            for skill_match in skill_matches:
+                start_pos = skill_match.start()
+                # Try to extract a complete object starting from this position
+                # Look for the next } after finding skill, level, and question
+                segment = response_text[start_pos:start_pos+500]  # Get a reasonable segment
+                
+                skill = skill_match.group(1)
+                
+                # Find level and question in the same segment
+                level_match = re.search(r'"level"\s*:\s*"([^"]+)"', segment, re.IGNORECASE)
+                question_match = re.search(r'"question"\s*:\s*"([^"]*)"', segment, re.DOTALL | re.IGNORECASE)
+                
+                if level_match and question_match:
+                    level = level_match.group(1)
+                    question = question_match.group(1).strip()
+                    
+                    if skill and level and question:
+                        questions.append({
+                            "skill": skill,
+                            "level": level,
+                            "question": question
+                        })
+            
+            if questions:
+                return questions
+        except Exception:
+            pass
+        
+        return None
+    
+    def generate_solution_with_ollama(self, question: str, skill: str, level: str, resume_text: Optional[str] = None) -> Optional[str]:
+        """Use Ollama to generate a concise sample solution for an interview question."""
+        try:
+            resume_context = ""
+            if resume_text:
+                # Use shorter resume context to speed up generation
+                resume_context = f"\n\nResume context (relevant excerpts):\n{resume_text[:500]}"
+            
+            prompt = f"""Answer this interview question in exactly 1-2 sentences (maximum 30 words). Be concise and direct.
+
+Question: {question}
+Skill: {skill}
+Level: {level}{resume_context}
+
+Provide a brief answer that directly addresses the question at {level} level. Maximum 2 sentences. Stop after 2 sentences. If you cannot stop after 2 sentences we will have issues, you must respond in two sentences, no need to add extra words."""
+            
+            response = ollama.chat(
+                model=self.ollama_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert technical interviewer. ALWAYS respond with exactly 1-2 sentences only. Maximum 30 words. Be extremely concise. Stop immediately after 2 sentences."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                options={
+                    "num_predict": 60,  # Very strict limit: ~60 tokens (~50 words)
+                    "temperature": 0.5,  # Lower temperature for more focused responses
+                    "stop": ["\n\n", "\n\n\n"]  # Stop on multiple newlines
+                }
+            )
+            
+            solution = response['message']['content'].strip()
+            
+            # Enforce strict length limits - truncate at sentence boundaries if needed
+            if len(solution) > 300:
+                # Try to find a good truncation point at sentence end
+                sentences = solution.split('. ')
+                if len(sentences) >= 2:
+                    # Take first 2 sentences
+                    solution = '. '.join(sentences[:2])
+                    if not solution.endswith('.'):
+                        solution += '.'
+                else:
+                    # Fallback: truncate at 300 chars at word boundary
+                    solution = solution[:300].rsplit(' ', 1)[0] + "..."
+            
+            # Additional safety: remove any extra sentences beyond 2
+            sentences = [s.strip() for s in solution.split('.') if s.strip()]
+            if len(sentences) > 2:
+                solution = '. '.join(sentences[:2]) + '.'
+            
+            return solution if solution else None
+            
+        except Exception as e:
+            print(f"Ollama solution generation failed: {str(e)}")
+            return None
+    
     def generate_questions_with_ollama(self, detected_skills: List[Dict], resume_text: str) -> List[Dict]:
         """Use Ollama to dynamically generate interview questions based on detected skills and levels."""
         try:
@@ -419,21 +586,26 @@ Generate 3-5 technical interview questions that:
    - Advanced: Complex scenarios, optimization, architecture, deep understanding
 4. Are specific and technical (not generic "tell me about yourself" questions)
 
-Return your response as a JSON array with this format:
+Return your response as a VALID JSON array only (no markdown, no code blocks, no explanatory text). Use this exact format:
 [
   {{"skill": "python", "level": "advanced", "question": "Your generated question here"}},
   {{"skill": "git", "level": "intermediate", "question": "Your generated question here"}}
 ]
 
-Generate questions for the top skills first. Return exactly 3-5 questions total.
-Return ONLY valid JSON, no additional text."""
+Important: 
+- Ensure all quotes are double quotes (not single quotes)
+- Do NOT include trailing commas
+- Do NOT wrap the JSON in code blocks or markdown
+- Return ONLY the JSON array, nothing else
+- Generate questions for the top skills first
+- Return exactly 3-5 questions total"""
             
             response = ollama.chat(
                 model=self.ollama_model,
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert technical interviewer. You create personalized, level-appropriate technical interview questions based on resume analysis. Always respond with valid JSON only."
+                        "content": "You are an expert technical interviewer. You create personalized, level-appropriate technical interview questions based on resume analysis. CRITICAL: You must respond with ONLY a valid JSON array. No markdown, no code blocks, no explanatory text. Use double quotes for all strings. Do not include trailing commas."
                     },
                     {
                         "role": "user",
@@ -444,12 +616,14 @@ Return ONLY valid JSON, no additional text."""
             
             response_text = response['message']['content'].strip()
             
-            # Extract JSON from response
-            json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(0)
+            # Use helper function to parse JSON with multiple fallback strategies
+            generated_questions = self._parse_json_from_response(response_text)
             
-            generated_questions = json.loads(response_text)
+            if generated_questions is None:
+                # Log the problematic response for debugging but don't crash
+                print(f"Failed to parse JSON from Ollama response. Response length: {len(response_text)} chars")
+                print(f"Response preview: {response_text[:500]}...")
+                raise json.JSONDecodeError("Failed to parse JSON from Ollama response", response_text, 0)
             
             # Validate and format questions
             validated_questions = []
@@ -475,10 +649,20 @@ Return ONLY valid JSON, no additional text."""
                     if level not in ["beginner", "intermediate", "advanced"]:
                         level = "intermediate"
                     
+                    # Generate solution using Ollama
+                    solution = None
+                    if self.use_ollama:
+                        try:
+                            solution = self.generate_solution_with_ollama(question, matched_key, level, resume_text)
+                        except Exception as e:
+                            print(f"Error generating solution: {str(e)}")
+                            solution = None
+                    
                     validated_questions.append({
                         "skill": matched_key,
                         "level": level,
-                        "question": question
+                        "question": question,
+                        "solution": solution
                     })
                     
                     if len(validated_questions) >= 5:
@@ -586,10 +770,20 @@ Return ONLY valid JSON, no additional text."""
             # Use rotation logic to get next question
             question_text = self._get_next_question_from_bank(skill_key, level)
             if question_text:
+                # Generate solution using Ollama if available
+                solution = None
+                if self.use_ollama:
+                    try:
+                        solution = self.generate_solution_with_ollama(question_text, skill_key, level, resume_text)
+                    except Exception as e:
+                        print(f"Error generating solution: {str(e)}")
+                        solution = None
+                
                 questions.append({
                     "skill": skill_key,
                     "level": level,
-                    "question": question_text
+                    "question": question_text,
+                    "solution": solution
                 })
                 skills_with_questions.add(skill_key)
         
@@ -609,10 +803,19 @@ Return ONLY valid JSON, no additional text."""
                 # Use rotation logic to get next intermediate question
                 question_text = self._get_next_question_from_bank(skill_key, "intermediate")
                 if question_text:
+                    # Generate solution using Ollama if available
+                    solution = None
+                    if self.use_ollama:
+                        try:
+                            solution = self.generate_solution_with_ollama(question_text, skill_key, "intermediate", resume_text)
+                        except Exception as e:
+                            solution = None
+                    
                     questions.append({
                         "skill": skill_key,
                         "level": "intermediate",
-                        "question": question_text
+                        "question": question_text,
+                        "solution": solution
                     })
                     skills_with_questions.add(skill_key)
         
@@ -642,10 +845,20 @@ Return ONLY valid JSON, no additional text."""
         # Fallback to question bank with rotation
         question_text = self._get_next_question_from_bank(skill_key, level, exclude_question)
         if question_text:
+            # Generate solution using Ollama if available (works with or without resume_text)
+            solution = None
+            if self.use_ollama:
+                try:
+                    solution = self.generate_solution_with_ollama(question_text, skill_key, level, resume_text)
+                except Exception as e:
+                    print(f"Error generating solution for refreshed question: {str(e)}")
+                    solution = None
+            
             return {
                 "skill": skill_key,
                 "level": level,
-                "question": question_text
+                "question": question_text,
+                "solution": solution
             }
         
         return None

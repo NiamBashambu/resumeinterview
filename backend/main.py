@@ -47,6 +47,7 @@ class InterviewQuestion(BaseModel):
     skill: str
     level: str
     question: str
+    solution: Optional[str] = None
 
 
 class AnalyzeResponse(BaseModel):
