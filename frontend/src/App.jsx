@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import './App.css'
+import LandingPage from './components/LandingPage'
 import ResumeUploader from './components/ResumeUploader'
 import ResultsDisplay from './components/ResultsDisplay'
 import SkillVisualization from './components/SkillVisualization'
 
 function App() {
+  const [selectedPersona, setSelectedPersona] = useState(null)
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -72,11 +74,42 @@ function App() {
     }
   }
 
+  // Show landing page if no persona is selected
+  if (!selectedPersona) {
+    return <LandingPage onSelectPersona={setSelectedPersona} />
+  }
+
+  // Get persona-specific header text
+  const getHeaderText = () => {
+    if (selectedPersona === 'employers') {
+      return {
+        title: 'Resume Interviewer - Employers',
+        subtitle: 'Upload a candidate resume to analyze skills and generate interview questions'
+      }
+    }
+    return {
+      title: 'Resume Interviewer',
+      subtitle: 'Upload your resume to get personalized interview questions'
+    }
+  }
+
+  const headerText = getHeaderText()
+
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Resume Interviewer</h1>
-        <p>Upload your resume to get personalized interview questions</p>
+        <button 
+          onClick={() => {
+            setSelectedPersona(null)
+            setResults(null)
+            setError(null)
+          }}
+          className="back-button"
+        >
+          ← Back to Home
+        </button>
+        <h1>{headerText.title}</h1>
+        <p>{headerText.subtitle}</p>
       </header>
 
       <main className="app-main">

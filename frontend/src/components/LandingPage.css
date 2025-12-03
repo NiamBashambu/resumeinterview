@@ -1,0 +1,180 @@
+.landing-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.landing-content {
+  max-width: 1000px;
+  width: 100%;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 3rem;
+}
+
+.landing-title {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+}
+
+.landing-subtitle {
+  font-size: 1.3rem;
+  opacity: 0.95;
+  font-weight: 300;
+}
+
+.platform-description {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.description-text {
+  color: white;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  text-align: center;
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+.personas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.persona-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  border: 3px solid transparent;
+}
+
+.persona-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--persona-color);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.persona-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  border-color: var(--persona-color);
+}
+
+.persona-card:hover::before {
+  transform: scaleX(1);
+}
+
+.persona-card.selected {
+  border-color: var(--persona-color);
+  transform: scale(1.05);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.persona-card.selected::before {
+  transform: scaleX(1);
+}
+
+.persona-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.persona-title {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.persona-description {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.persona-arrow {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  font-size: 1.5rem;
+  color: var(--persona-color);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateX(-10px);
+}
+
+.persona-card:hover .persona-arrow,
+.persona-card.selected .persona-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+  .landing-title {
+    font-size: 2.5rem;
+  }
+
+  .landing-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .platform-description {
+    padding: 1.5rem;
+  }
+
+  .description-text {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .personas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .persona-card {
+    padding: 2rem;
+  }
+}
+
