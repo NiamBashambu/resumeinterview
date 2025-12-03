@@ -60,6 +60,47 @@ function LandingPage({ onSelectPersona }) {
             </div>
           ))}
         </div>
+
+        <div className="how-it-works-section">
+          <h2 className="how-it-works-title">How It Works</h2>
+          <div className="steps-container">
+            <div className="step-card">
+              <div className="step-number">1</div>
+              <div className="step-icon">📄</div>
+              <h3 className="step-title">Upload Your Resume</h3>
+              <p className="step-description">
+                Simply upload your PDF resume. Our system extracts and analyzes all the text content automatically.
+              </p>
+            </div>
+            <div className="step-connector">→</div>
+            <div className="step-card">
+              <div className="step-number">2</div>
+              <div className="step-icon">🔍</div>
+              <h3 className="step-title">AI Skill Detection</h3>
+              <p className="step-description">
+                Advanced AI analyzes your resume to detect technical skills and infer your proficiency levels (beginner, intermediate, or advanced).
+              </p>
+            </div>
+            <div className="step-connector">→</div>
+            <div className="step-card">
+              <div className="step-number">3</div>
+              <div className="step-icon">❓</div>
+              <h3 className="step-title">Get Personalized Questions</h3>
+              <p className="step-description">
+                Receive 3-5 tailored interview questions based on your detected skills and experience level, helping you prepare effectively.
+              </p>
+            </div>
+            <div className="step-connector">→</div>
+            <div className="step-card">
+              <div className="step-number">4</div>
+              <div className="step-icon">📊</div>
+              <h3 className="step-title">Visualize Your Skills</h3>
+              <p className="step-description">
+                Explore an interactive 3D visualization of your skills profile, making it easy to understand your technical strengths at a glance.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
